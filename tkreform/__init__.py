@@ -1,6 +1,5 @@
-import copy
 import tkinter as tk
-from tkinter import BitmapImage, ttk
+from tkinter import ttk
 from typing import Any, Callable, Literal, Tuple, Type, Union
 
 try:
@@ -38,6 +37,13 @@ class Widget:
         def __wrapper(func: Callable[[tk.Event], Any]):
             self.widget.bind(seq, func, append)
         return __wrapper
+
+    def destroy(self):
+        self.widget.destroy()
+
+    def add_widget(self, sw: Type[WidgetType], *args, **kwargs):
+        w = sw(self.widget, *args, **kwargs)
+        return Widget(w)
 
     @property
     def text(self) -> str:
@@ -80,7 +86,7 @@ class Widget:
         self.widget["height"] = h
 
     @property
-    def font(self) -> Tuple[str, int, str]:
+    def font(self) -> str:
         return self.widget["font"]
 
     @font.setter
@@ -106,6 +112,9 @@ class Window:
         Run window mainloop.
         """
         self.base.mainloop()
+
+    def destroy(self):
+        self.base.destroy()
 
     @property
     def title(self):
