@@ -1,6 +1,4 @@
 import tkreform, tkinter as tk, tkinter.ttk as ttk
-from PIL import Image
-from PIL.ImageTk import PhotoImage
 
 win = tkreform.Window(tk.Tk())
 
@@ -27,13 +25,13 @@ f2.height = 50
 w2 = f1.add_widget(ttk.Label)
 w2.text = "Title"
 w2.font = "Segoe UI", 20
-w2.widget.grid(padx=5, pady=5, sticky="NW")
+w2.grid(padx=5, pady=5, sticky="NW")
 
 w3 = f1.add_widget(tk.Message)
 w3.text = "A quick brown fox jumps over the lazy dog.\n"\
     "texttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttexttext"
 w3.font = "Segoe UI", 12
-w3.widget.grid(row=1, padx=5, pady=5, sticky="NW")
+w3.grid(row=1, padx=5, pady=5, sticky="NW")
 w3.width = 380
 
 b1 = f2.add_widget(ttk.Button)

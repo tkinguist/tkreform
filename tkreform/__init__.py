@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 from . import declarative as dec
-from typing import Any, Callable, Iterable, Literal, Tuple, Type, Union
+from typing import Any, Callable, Iterable, List, Literal, Tuple, Type, Union
 
 try:
     from PIL.Image import Image
@@ -13,38 +13,22 @@ except ImportError:
     HAS_PIL = False
 
 WidgetType = Union[tk.Widget, ttk.Widget]
+WindowType = Union[tk.Tk, tk.Toplevel]
 
 
-class Widget:
-    def __init__(self, widget: WidgetType) -> None:
-        self.widget = widget
-
-        # To keep the content image alive, here gives a slot to add a
-        # reference to the image so that the image wouldn't be recycled by GC
-        # at the moment the image adder finishes its work.
-        self._image_slot = None
+class Base:
+    def __init__(self, base: Union[WindowType, WidgetType]) -> None:
+        self.base = base
         self.__declarative_prev_widget = None
-
-    def grid(self, *args, **kwargs):
-        self.widget.grid(*args, **kwargs)
-
-    def pack(self, *args, **kwargs):
-        self.widget.pack(*args, **kwargs)
-
-    def callback(self, func: Callable[[], Any]):
-        self.widget["command"] = func
-        return func
+        self.__sub_widget: List["Base"] = []
 
     def on(self, seq: str, append: bool = False):
         def __wrapper(func: Callable[[tk.Event], Any]):
-            self.widget.bind(seq, func, append)
+            self.base.bind(seq, func, append)
         return __wrapper
 
-    def destroy(self):
-        self.widget.destroy()
-
     def add_widget(self, sw: Type[WidgetType], *args, **kwargs):
-        w = sw(self.widget, *args, **kwargs)
+        w = sw(self.base, *args, **kwargs)
         return Widget(w)
 
     def load_sub(self, sub: Iterable[dec.W]):
@@ -67,22 +51,46 @@ class Widget:
                     **(
                         dict()
                             if self.__declarative_prev_widget is None else
-                        dict(after=self.__declarative_prev_widget.widget)
+                        dict(after=self.__declarative_prev_widget.base)
                     )
                 )
             self.__declarative_prev_widget = _widget
 
+    def destroy(self):
+        self.base.destroy()
+
+
+class Widget(Base):
+    base: WidgetType
+
+    def __init__(self, widget: WidgetType) -> None:
+        # To keep the content image alive, here gives a slot to add a
+        # reference to the image so that the image wouldn't be recycled by GC
+        # at the moment the image adder finishes its work.
+        self._image_slot = None
+        super().__init__(widget)
+
+    def grid(self, *args, **kwargs):
+        self.base.grid(*args, **kwargs)
+
+    def pack(self, *args, **kwargs):
+        self.base.pack(*args, **kwargs)
+
+    def callback(self, func: Callable[[], Any]):
+        self.base["command"] = func
+        return func
+
     @property
     def text(self) -> str:
-        return self.widget["text"]
+        return self.base["text"]
 
     @text.setter
     def text(self, txt: str):
-        self.widget["text"] = txt
+        self.base["text"] = txt
 
     @property
     def image(self) -> PhotoImage:  # type: ignore
-        return self.widget["image"]
+        return self.base["image"]
 
     @image.setter
     def image(self, img: Union[str, Image, PhotoImage]):  # type: ignore
@@ -94,23 +102,23 @@ class Widget:
             img
         )
         self._image_slot = _img
-        self.widget["image"] = _img
+        self.base["image"] = _img
 
     @property
     def width(self) -> int:
-        return self.widget["width"]
+        return self.base["width"]
 
     @width.setter
     def width(self, w: int):
-        self.widget["width"] = w
+        self.base["width"] = w
 
     @property
     def height(self) -> int:
-        return self.widget["height"]
+        return self.base["height"]
 
     @height.setter
     def height(self, h: int):
-        self.widget["height"] = h
+        self.base["height"] = h
 
     @property
     def size(self):
@@ -122,35 +130,33 @@ class Widget:
 
     @property
     def font(self) -> str:
-        return self.widget["font"]
+        return self.base["font"]
 
     @font.setter
     def font(self, fon: Union[str, Tuple[str, int], Tuple[str, int, str]]):
-        self.widget["font"] = fon
+        self.base["font"] = fon
 
 
-class Window:
+class Window(Base):
     """
     Reformed Window type based on `tkinter`.
     """
-    def __init__(self, base: Union[tk.Tk, tk.Toplevel]) -> None:
+    base: WindowType
+
+    def __init__(self, base: WindowType) -> None:
         """
         Initialize a new window.  
         
         Args:
         - base: `tk.Tk | tk.Toplevel` - base window type
         """
-        self.base = base
-        self.__declarative_prev_widget = None
+        super().__init__(base)
 
     def loop(self):
         """
         Run window mainloop.
         """
         self.base.mainloop()
-
-    def destroy(self):
-        self.base.destroy()
 
     @property
     def title(self):
@@ -296,43 +302,12 @@ class Window:
     def screenwh(self):
         return self.base.winfo_screenwidth(), self.base.winfo_screenheight()
 
-    def on(self, seq: str, append: bool = False):
-        def __wrapper(func: Callable[[tk.Event], Any]):
-            self.base.bind(seq, func, append)
-        return __wrapper
-
     def on_protocol(self, protocol: str):
         def __wrapper(func: Callable[[], Any]):
             self.base.protocol(protocol, func)
             return func
         return __wrapper
 
-    def add_widget(self, widget: Type[WidgetType], *args, **kwargs):
-        w = widget(self.base, *args, **kwargs)
-        return Widget(w)
-
     def __truediv__(self, other: Iterable[dec.W]):
-        for w in other:
-            _widget = self.add_widget(w.widget, **w.kwargs)
-            _widget.load_sub(w.sub)
-            ctl = w.controller
-            if isinstance(ctl, dec.Gridder):
-                _widget.grid(
-                    column=ctl.column, columnspan=ctl.columnspan,
-                    ipadx=ctl.ipadx, ipady=ctl.ipady,
-                    padx=ctl.padx, pady=ctl.pady,
-                    row=ctl.row, rowspan=ctl.rowspan, sticky=ctl.sticky
-                )
-            elif isinstance(ctl, dec.Packer):
-                _widget.pack(
-                    anchor=ctl.anchor, expand=ctl.expand, fill=ctl.fill,
-                    ipadx=ctl.ipadx, ipady=ctl.ipady,
-                    padx=ctl.padx, pady=ctl.pady, side=ctl.side,
-                    **(
-                        dict()
-                            if self.__declarative_prev_widget is None else
-                        dict(after=self.__declarative_prev_widget.widget)
-                    )
-                )
-            self.__declarative_prev_widget = _widget
+        super().load_sub(other)
         return self
