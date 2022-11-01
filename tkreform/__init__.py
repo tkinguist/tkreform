@@ -22,10 +22,10 @@ class Base:
     def __init__(self, base: Union[WindowType, WidgetType]) -> None:
         self.base = base
         self.__declarative_prev_widget = None
-        self.__sub_widget: List["Base"] = []
+        self._sub_widget: List["Widget"] = []
 
-    def __getitem__(self, it: Union[int, slice]):
-        return self.__sub_widget[it]
+    def __getitem__(self, it: int):
+        return self._sub_widget[it]
 
     def on(self, seq: str, append: bool = False):
         def __wrapper(func: Callable[[tk.Event], Any]):
@@ -61,7 +61,7 @@ class Base:
                 )
             else:
                 raise WidgetNotArranged(f"widget '{_widget.base}' has not been arranged by gridder or packer.")
-            self.__sub_widget.append(_widget)
+            self._sub_widget.append(_widget)
             self.__declarative_prev_widget = _widget
 
     def destroy(self):
@@ -192,6 +192,8 @@ class Window(Base):
         return __wrapper
 
     def __truediv__(self, other: Iterable[dec.W]):
+        for old in self._sub_widget:
+            old.destroy()
         super().load_sub(other)
         return self
 
