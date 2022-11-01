@@ -1,0 +1,2 @@
+class WidgetNotArranged(Exception):
+    pass

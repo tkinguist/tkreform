@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+
+from tkreform.exceptions import WidgetNotArranged
 from . import declarative as dec
 from typing import Any, Callable, Iterable, List, Literal, Tuple, Type, Union
 
@@ -21,6 +23,9 @@ class Base:
         self.base = base
         self.__declarative_prev_widget = None
         self.__sub_widget: List["Base"] = []
+
+    def __getitem__(self, it: Union[int, slice]):
+        return self.__sub_widget[it]
 
     def on(self, seq: str, append: bool = False):
         def __wrapper(func: Callable[[tk.Event], Any]):
@@ -54,6 +59,9 @@ class Base:
                         dict(after=self.__declarative_prev_widget.base)
                     )
                 )
+            else:
+                raise WidgetNotArranged(f"widget '{_widget.base}' has not been arranged by gridder or packer.")
+            self.__sub_widget.append(_widget)
             self.__declarative_prev_widget = _widget
 
     def destroy(self):
