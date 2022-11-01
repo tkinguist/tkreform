@@ -158,6 +158,35 @@ class Window(Base):
         """
         self.base.mainloop()
 
+    def sub_window(self):
+        sub = type(self)(tk.Toplevel(self.base))
+        return sub
+
+    def close(self):
+        self.base.destroy()
+
+    def update(self):
+        self.base.update()
+
+    def wmhide(self):
+        self.base.withdraw()
+
+    def minimize(self):
+        self.base.iconify()
+
+    def restore(self):
+        self.base.deiconify()
+    
+    def on_protocol(self, protocol: str):
+        def __wrapper(func: Callable[[], Any]):
+            self.base.protocol(protocol, func)
+            return func
+        return __wrapper
+
+    def __truediv__(self, other: Iterable[dec.W]):
+        super().load_sub(other)
+        return self
+
     @property
     def title(self):
         return self.base.title()
@@ -247,25 +276,6 @@ class Window(Base):
         self.base.minsize(mx, my)
         self.base.maxsize(nx, ny)
 
-    def sub_window(self):
-        sub = type(self)(tk.Toplevel(self.base))
-        return sub
-
-    def close(self):
-        self.base.destroy()
-
-    def update(self):
-        self.base.update()
-
-    def wmhide(self):
-        self.base.withdraw()
-
-    def minimize(self):
-        self.base.iconify()
-
-    def restore(self):
-        self.base.deiconify()
-
     @property
     def mode(self):
         return self.base.state()
@@ -301,13 +311,3 @@ class Window(Base):
     @property
     def screenwh(self):
         return self.base.winfo_screenwidth(), self.base.winfo_screenheight()
-
-    def on_protocol(self, protocol: str):
-        def __wrapper(func: Callable[[], Any]):
-            self.base.protocol(protocol, func)
-            return func
-        return __wrapper
-
-    def __truediv__(self, other: Iterable[dec.W]):
-        super().load_sub(other)
-        return self
