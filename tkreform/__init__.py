@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import Any, Callable, Literal, Tuple, Type, Union
+from . import declarative as dec
+from typing import Any, Callable, Iterable, Literal, Tuple, Type, Union
 
 try:
     from PIL.Image import Image
@@ -22,6 +23,7 @@ class Widget:
         # reference to the image so that the image wouldn't be recycled by GC
         # at the moment the image adder finishes its work.
         self._image_slot = None
+        self.__declarative_prev_widget = None
 
     def grid(self, *args, **kwargs):
         self.widget.grid(*args, **kwargs)
@@ -44,6 +46,31 @@ class Widget:
     def add_widget(self, sw: Type[WidgetType], *args, **kwargs):
         w = sw(self.widget, *args, **kwargs)
         return Widget(w)
+
+    def load_sub(self, sub: Iterable[dec.W]):
+        for w in sub:
+            _widget = self.add_widget(w.widget, **w.kwargs)
+            _widget.load_sub(w.sub)
+            ctl = w.controller
+            if isinstance(ctl, dec.Gridder):
+                _widget.grid(
+                    column=ctl.column, columnspan=ctl.columnspan,
+                    ipadx=ctl.ipadx, ipady=ctl.ipady,
+                    padx=ctl.padx, pady=ctl.pady,
+                    row=ctl.row, rowspan=ctl.rowspan, sticky=ctl.sticky
+                )
+            elif isinstance(ctl, dec.Packer):
+                _widget.pack(
+                    anchor=ctl.anchor, expand=ctl.expand, fill=ctl.fill,
+                    ipadx=ctl.ipadx, ipady=ctl.ipady,
+                    padx=ctl.padx, pady=ctl.pady, side=ctl.side,
+                    **(
+                        dict()
+                            if self.__declarative_prev_widget is None else
+                        dict(after=self.__declarative_prev_widget.widget)
+                    )
+                )
+            self.__declarative_prev_widget = _widget
 
     @property
     def text(self) -> str:
@@ -86,6 +113,14 @@ class Widget:
         self.widget["height"] = h
 
     @property
+    def size(self):
+        return self.width, self.height
+
+    @size.setter
+    def size(self, si: Tuple[int, int]):
+        self.width, self.height = si
+
+    @property
     def font(self) -> str:
         return self.widget["font"]
 
@@ -106,6 +141,7 @@ class Window:
         - base: `tk.Tk | tk.Toplevel` - base window type
         """
         self.base = base
+        self.__declarative_prev_widget = None
 
     def loop(self):
         """
@@ -274,3 +310,29 @@ class Window:
     def add_widget(self, widget: Type[WidgetType], *args, **kwargs):
         w = widget(self.base, *args, **kwargs)
         return Widget(w)
+
+    def __truediv__(self, other: Iterable[dec.W]):
+        for w in other:
+            _widget = self.add_widget(w.widget, **w.kwargs)
+            _widget.load_sub(w.sub)
+            ctl = w.controller
+            if isinstance(ctl, dec.Gridder):
+                _widget.grid(
+                    column=ctl.column, columnspan=ctl.columnspan,
+                    ipadx=ctl.ipadx, ipady=ctl.ipady,
+                    padx=ctl.padx, pady=ctl.pady,
+                    row=ctl.row, rowspan=ctl.rowspan, sticky=ctl.sticky
+                )
+            elif isinstance(ctl, dec.Packer):
+                _widget.pack(
+                    anchor=ctl.anchor, expand=ctl.expand, fill=ctl.fill,
+                    ipadx=ctl.ipadx, ipady=ctl.ipady,
+                    padx=ctl.padx, pady=ctl.pady, side=ctl.side,
+                    **(
+                        dict()
+                            if self.__declarative_prev_widget is None else
+                        dict(after=self.__declarative_prev_widget.widget)
+                    )
+                )
+            self.__declarative_prev_widget = _widget
+        return self
