@@ -1,13 +1,19 @@
+import sys
 import tkinter as tk
 from tkinter import ttk
 
 from tkreform.exceptions import WidgetNotArranged
 from . import declarative as dec
-from typing import Any, Callable, Iterable, List, Literal, Tuple, Type, Union
+from typing import Any, Callable, Iterable, List, Tuple, Type, Union
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 try:
-    from PIL.Image import Image
-    from PIL.ImageTk import PhotoImage
+    from PIL.Image import Image  # type: ignore
+    from PIL.ImageTk import PhotoImage  # type: ignore
     HAS_PIL = True
 except ImportError:
     Image = tk.Image

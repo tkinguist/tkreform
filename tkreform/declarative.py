@@ -1,6 +1,12 @@
 from dataclasses import dataclass
+import sys
 from tkinter import Widget
-from typing import Any, Iterable, Literal, Type, Union
+from typing import Any, Iterable, Type, Union
+
+if sys.version_info >= (3, 8):
+    from typing import Literal
+else:
+    from typing_extensions import Literal
 
 Direction = Literal["n", "ne", "e", "se", "s", "sw", "w", "nw"]
 
