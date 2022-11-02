@@ -40,8 +40,8 @@ else:
 
 # attempt to use PIL
 try:
-    from PIL.Image import Image  # type: ignore
-    from PIL.ImageTk import PhotoImage  # type: ignore
+    from PIL.Image import Image
+    from PIL.ImageTk import PhotoImage
     HAS_PIL = True
 except ImportError:
     Image = tk.Image
