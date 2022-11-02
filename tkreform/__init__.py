@@ -213,14 +213,14 @@ class Widget(_Base):
         if isinstance(geo, dec.Gridder):
             self.grid(
                 column=geo.column, columnspan=geo.columnspan,
-                ipadx=geo.ipadx, ipady=geo.ipady,
+                in_=geo.in_, ipadx=geo.ipadx, ipady=geo.ipady,
                 padx=geo.padx, pady=geo.pady,
                 row=geo.row, rowspan=geo.rowspan, sticky=geo.sticky
             )
         elif isinstance(geo, dec.Packer):
             self.pack(
                 anchor=geo.anchor, expand=geo.expand, fill=geo.fill,
-                ipadx=geo.ipadx, ipady=geo.ipady,
+                in_=geo.in_, ipadx=geo.ipadx, ipady=geo.ipady,
                 padx=geo.padx, pady=geo.pady, side=geo.side,
             )
         elif isinstance(geo, dec.Placer):
@@ -228,7 +228,7 @@ class Widget(_Base):
                 x=geo.x, y=geo.y, relx=geo.relx, rely=geo.rely,
                 anchor=geo.anchor, width=geo.width, height=geo.height,
                 relwidth=geo.relwidth, relheight=geo.relheight,
-                bordermode=geo.bordermode
+                bordermode=geo.bordermode, in_=geo.in_
             )
         else:
             raise WidgetNotArranged(

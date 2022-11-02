@@ -20,7 +20,7 @@ Example (Hello, World):
 
 from dataclasses import dataclass
 import sys
-from tkinter import Widget
+from tkinter import Tk, Toplevel, Widget, ttk
 from typing import Any, Iterable, Optional, Type, Union
 
 if sys.version_info >= (3, 8):
@@ -35,25 +35,29 @@ Direction = Literal["n", "ne", "e", "se", "s", "sw", "w", "nw"]
 class Gridder:
     column: Optional[int] = None
     columnspan: Optional[int] = None
+    in_: Optional[Union[Tk, Toplevel, Widget, ttk.Widget]] = None
     ipadx: Optional[int] = None
     ipady: Optional[int] = None
     padx: Optional[int] = None
     pady: Optional[int] = None
     row: Optional[int] = None
     rowspan: Optional[int] = None
-    sticky: Literal[Direction, "nesw"] = "nesw"
+    sticky: Optional[Literal[Direction, "nesw"]] = None
 
 
 @dataclass
 class Packer:
-    anchor: Literal[Direction, "center"] = "center"
+    after: Optional[Union[Widget, ttk.Widget]] = None
+    anchor: Optional[Literal[Direction, "center"]] = None
+    before: Optional[Union[Widget, ttk.Widget]] = None
     expand: bool = False
     fill: Literal["none", "x", "y", "both"] = "none"
+    in_: Optional[Union[Tk, Toplevel, Widget, ttk.Widget]] = None
     ipadx: Optional[int] = None
     ipady: Optional[int] = None
     padx: Optional[int] = None
     pady: Optional[int] = None
-    side: Literal["", "top", "bottom", "left", "right"] = ""
+    side: Optional[Literal["top", "bottom", "left", "right"]] = None
 
 
 @dataclass
@@ -66,6 +70,7 @@ class Placer:
     height: Optional[int] = None
     relwidth: Optional[int] = None
     relheight: Optional[int] = None
+    in_: Optional[Union[Tk, Toplevel, Widget, ttk.Widget]] = None
     bordermode: Optional[Literal["inside", "outside"]] = None
     anchor: Optional[Literal[Direction, "center"]] = None
 
