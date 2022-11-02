@@ -23,6 +23,6 @@ win /= (
     )
 )
 
-win[1][1][0].callback(win.destroy)
+win[1][1][0].callback(win.destroy)  # type: ignore
 
 win.loop()

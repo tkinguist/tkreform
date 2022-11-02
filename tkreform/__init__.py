@@ -6,11 +6,13 @@ from tkreform.exceptions import WidgetNotArranged
 from . import declarative as dec
 from typing import Any, Callable, Iterable, List, Tuple, Type, Union
 
+# use Literal type
 if sys.version_info >= (3, 8):
     from typing import Literal
 else:
     from typing_extensions import Literal
 
+# attempt to use PIL
 try:
     from PIL.Image import Image  # type: ignore
     from PIL.ImageTk import PhotoImage  # type: ignore
@@ -24,25 +26,58 @@ WidgetType = Union[tk.Widget, ttk.Widget]
 WindowType = Union[tk.Tk, tk.Toplevel]
 
 
-class Base:
+class _Base:
     def __init__(self, base: Union[WindowType, WidgetType]) -> None:
+        """
+        Base type of Window / Widget.
+
+        - base: `WindowType | WidgetType` - base window / widget type
+        """
         self.base = base
         self.__declarative_prev_widget = None
         self._sub_widget: List["Widget"] = []
 
-    def __getitem__(self, it: int):
+    def __getitem__(self, it: Union[int, slice]):
         return self._sub_widget[it]
 
     def on(self, seq: str, append: bool = False):
+        """
+        Register response function on event sequence.
+
+        - seq: `str` - event sequence
+        - append: `bool` - decide to override or append function to target
+
+        Returns: `Wrapper(func: (Event) -> Any)`
+
+        Usage:
+        >>> w = Window(...)  # or Widget(...)
+        >>> @w.on("<Button-2>")
+        ... def rclick(event: Event):
+        ...     ...
+        """
         def __wrapper(func: Callable[[tk.Event], Any]):
             self.base.bind(seq, func, append)
+            return func
         return __wrapper
 
     def add_widget(self, sw: Type[WidgetType], *args, **kwargs):
+        """
+        Add a widget to window / widget.
+
+        - sw: `Type[WidgetType]` - type of sub widget
+        - *args, **kwargs - arguments for sub widget
+
+        Returns: `Widget`
+        """
         w = sw(self.base, *args, **kwargs)
         return Widget(w)
 
     def load_sub(self, sub: Iterable[dec.W]):
+        """
+        Load sub widgets recursively.
+
+        - sub: `Iterable[dec.W]` - sub widget tree
+        """
         for w in sub:
             _widget = self.add_widget(w.widget, **w.kwargs)
             _widget.load_sub(w.sub)
@@ -65,16 +100,27 @@ class Base:
                         dict(after=self.__declarative_prev_widget.base)
                     )
                 )
+            elif isinstance(ctl, dec.Placer):
+                _widget.place(
+                    x=ctl.x, y=ctl.y, relx=ctl.relx, rely=ctl.rely,
+                    anchor=ctl.anchor, width=ctl.width, height=ctl.height,
+                    relwidth=ctl.relwidth, relheight=ctl.relheight,
+                    bordermode=ctl.bordermode
+                )
             else:
-                raise WidgetNotArranged(f"widget '{_widget.base}' has not been arranged by gridder or packer.")
+                raise WidgetNotArranged(
+                    f"widget '{_widget.base}' has not been arranged by "
+                    "gridder or packer."
+                )
             self._sub_widget.append(_widget)
             self.__declarative_prev_widget = _widget
 
     def destroy(self):
+        """Destroy window / widget."""
         self.base.destroy()
 
 
-class Widget(Base):
+class Widget(_Base):
     base: WidgetType
 
     def __init__(self, widget: WidgetType) -> None:
@@ -84,18 +130,90 @@ class Widget(Base):
         self._image_slot = None
         super().__init__(widget)
 
-    def grid(self, *args, **kwargs):
-        self.base.grid(*args, **kwargs)
+    def grid(self, **kwargs):
+        """
+        Position a widget in the parent widget in a grid.
+        
+        - column: `int` - use cell identified with given column (starting
+            with 0)
+        - columnspan: `int` - this widget will span several columns
+        - in_: `WindowType | WidgetType` - use master to contain this widget
+        - ipadx: `int` - add internal padding in x direction
+        - ipady: `int` - add internal padding in y direction
+        - padx: `int` - add padding in x direction
+        - pady: `int` - add padding in y direction
+        - row: `int` - use cell identified with given row (starting with 0)
+        - rowspan: `int` - this widget will span several rows
+        - sticky: `str` - if cell is larger on which sides will this widget
+            stick to the cell boundary
+        """
+        self.base.grid(**kwargs)
 
-    def pack(self, *args, **kwargs):
-        self.base.pack(*args, **kwargs)
+    def pack(self, **kwargs):
+        """
+        Pack a widget in the parent widget.
+
+        - after: `WidgetType` - pack it after you have packed widget
+        - anchor: `dec.Direction` - position widget according to given
+            direction
+        - before: `WidgetType` - pack it before you will pack widget
+        - expand: `bool` - expand widget if parent size grows
+        - fill: `Literal["none", "x", "y", "both"]` - fill widget if widget
+            grows
+        - in_: `WindowType | WidgetType` - use master to contain this widget
+        - ipadx: `int` - add internal padding in x direction
+        - ipady: `int` - add internal padding in y direction
+        - padx: `int` - add padding in x direction
+        - pady: `int` - add padding in y direction
+        - side: `Literal["", "top", "bottom", "left", "right"]` - where to add
+            this widget
+        """
+        self.base.pack(**kwargs)
+
+    def place(self, **kwargs):
+        """
+        Place a widget in the parent widget.
+
+        - in_: `WindowType | WidgetType` - master relative to which the widget
+            is placed
+        - x: `int` - locate anchor of this widget at position x of master
+        - y: `int` - locate anchor of this widget at position y of master
+        - relx: `int` - locate anchor of this widget between 0.0 and 1.0
+            relative to width of master (1.0 is right edge)
+        - rely: `int` - locate anchor of this widget between 0.0 and 1.0
+            relative to height of master (1.0 is bottom edge)
+        - anchor: `dec.Direction` - position anchor according to given
+            direction
+        - width: `int` - width of this widget in pixel
+        - height: `int` - height of this widget in pixel
+        - relwidth: `int` - width of this widget between 0.0 and 1.0 relative
+            to width of master (1.0 is the same width as the master)
+        - relheight: `int` - height of this widget between 0.0 and 1.0
+            relative to height of master (1.0 is the same height as the
+            master)
+        - bordermode: `Literal["inside", "outside"]` - whether to take border
+            width of master widget into account
+        """
+        self.base.place(**kwargs)
 
     def callback(self, func: Callable[[], Any]):
+        """
+        Set callback function.
+
+        - func: `func: () -> Any` - the function to be called
+
+        Usage:
+        >>> w = Widget(...)
+        >>> @w.callback
+        ... def click():
+        ...     ...
+        """
         self.base["command"] = func
         return func
 
     @property
     def text(self) -> str:
+        """The text of the widget."""
         return self.base["text"]
 
     @text.setter
@@ -104,6 +222,7 @@ class Widget(Base):
 
     @property
     def image(self) -> PhotoImage:  # type: ignore
+        """The image of the widget."""
         return self.base["image"]
 
     @image.setter
@@ -120,6 +239,7 @@ class Widget(Base):
 
     @property
     def width(self) -> int:
+        """The width of the widget."""
         return self.base["width"]
 
     @width.setter
@@ -128,6 +248,7 @@ class Widget(Base):
 
     @property
     def height(self) -> int:
+        """The height of the widget."""
         return self.base["height"]
 
     @height.setter
@@ -136,6 +257,7 @@ class Widget(Base):
 
     @property
     def size(self):
+        """The size of the widget, in (x, y) form."""
         return self.width, self.height
 
     @size.setter
@@ -144,6 +266,7 @@ class Widget(Base):
 
     @property
     def font(self) -> str:
+        """The text font of the widget."""
         return self.base["font"]
 
     @font.setter
@@ -151,7 +274,7 @@ class Widget(Base):
         self.base["font"] = fon
 
 
-class Window(Base):
+class Window(_Base):
     """
     Reformed Window type based on `tkinter`.
     """
@@ -161,7 +284,6 @@ class Window(Base):
         """
         Initialize a new window.  
         
-        Args:
         - base: `tk.Tk | tk.Toplevel` - base window type
         """
         super().__init__(base)
@@ -173,25 +295,44 @@ class Window(Base):
         self.base.mainloop()
 
     def sub_window(self):
+        """
+        Create a sub window.
+        
+        Returns: `tk.Toplevel`
+        """
         sub = type(self)(tk.Toplevel(self.base))
         return sub
 
-    def close(self):
-        self.base.destroy()
-
     def update(self):
+        """Update window."""
         self.base.update()
 
     def wmhide(self):
+        """Withdraw (hide) the window."""
         self.base.withdraw()
 
     def minimize(self):
+        """Minimize the window."""
         self.base.iconify()
 
     def restore(self):
+        """Restore the window from being withdrawn or minimized."""
         self.base.deiconify()
     
     def on_protocol(self, protocol: str):
+        """
+        Register response function on protocol hook.
+
+        - protocol: `str` - hook event
+
+        Returns: `Wrapper(func: () -> Any)`
+
+        Usage:
+        >>> w = Window(...)
+        >>> @w.on_protocol(...)
+        ... def hook():
+        ...     ...
+        """
         def __wrapper(func: Callable[[], Any]):
             self.base.protocol(protocol, func)
             return func
@@ -205,6 +346,7 @@ class Window(Base):
 
     @property
     def title(self):
+        """Window title."""
         return self.base.title()
 
     @title.setter
@@ -213,6 +355,7 @@ class Window(Base):
 
     @property
     def geometry(self):
+        """Geometry string."""
         return self.base.geometry()
 
     @geometry.setter
@@ -222,7 +365,7 @@ class Window(Base):
     @property
     def xgeo(self):
         """
-        A tuple converted from geometry string
+        A tuple (w, h, x, y) converted from geometry string
         """
         size, posx, posy = self.geometry.split("+", 2)
         sx, sy = (int(p) for p in size.split("x", 1))
@@ -234,6 +377,7 @@ class Window(Base):
 
     @property
     def size(self):
+        """Window size, in tuple (w, h)."""
         sx, sy, *_ = self.xgeo
         return sx, sy
 
@@ -243,6 +387,7 @@ class Window(Base):
 
     @property
     def pos(self):
+        """Window position, in tuple (x, y)."""
         *_, px, py = self.xgeo
         return px, py
 
@@ -252,6 +397,7 @@ class Window(Base):
 
     @property
     def icon(self):
+        """Window icon."""
         return self.base.iconbitmap()
 
     @icon.setter
@@ -259,10 +405,17 @@ class Window(Base):
         self.base.iconbitmap(ic, ic)
 
     def xicon(self, *ic: PhotoImage, inherit: bool = True):  # type: ignore
+        """
+        Advanced icon setter.
+
+        - *ic: `PhotoImage` - icon images
+        - inherit: `bool` - whether the icon applies to sub windows
+        """
         self.base.iconphoto(inherit, *ic)
 
     @property
     def bgcolor(self) -> str:
+        """Window background color."""
         return self.base["background"]
 
     @bgcolor.setter
@@ -271,6 +424,7 @@ class Window(Base):
 
     @property
     def resizable(self):
+        """Window resizing ability in tuple (x, y)."""
         return self.base.resizable()
 
     @resizable.setter
@@ -280,6 +434,7 @@ class Window(Base):
 
     @property
     def size_range(self):
+        """Resize range if window in ((xmin, xmax), (ymin, ymax))"""
         mx, my = self.base.minsize()
         nx, ny = self.base.maxsize()
         return (mx, nx), (my, ny)
@@ -294,6 +449,7 @@ class Window(Base):
 
     @property
     def mode(self):
+        """Window mode (state) in `Literal["normal", "iconic", "withdrawn"]`."""
         return self.base.state()
 
     @mode.setter
@@ -302,6 +458,7 @@ class Window(Base):
 
     @property
     def alpha(self) -> float:
+        """Window alpha."""
         return self.base.attributes("-alpha")
 
     @alpha.setter
@@ -310,6 +467,7 @@ class Window(Base):
 
     @property
     def top(self) -> bool:
+        """Whether the window lies on the toppest."""
         return self.base.attributes("-topmost")
 
     @top.setter
@@ -318,6 +476,7 @@ class Window(Base):
 
     @property
     def fullscreen(self) -> bool:
+        """Whether the window occupies a whole screen."""
         return self.base.attributes("-fullscreen")
 
     @fullscreen.setter
@@ -326,4 +485,5 @@ class Window(Base):
 
     @property
     def screenwh(self):
+        """Current screen size in tuple (w, h)"""
         return self.base.winfo_screenwidth(), self.base.winfo_screenheight()

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import sys
 from tkinter import Widget
-from typing import Any, Iterable, Type, Union
+from typing import Any, Iterable, Optional, Type, Union
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -13,14 +13,14 @@ Direction = Literal["n", "ne", "e", "se", "s", "sw", "w", "nw"]
 
 @dataclass
 class Gridder:
-    column: int = 0
-    columnspan: int = 1
-    ipadx: int = 0
-    ipady: int = 0
-    padx: int = 0
-    pady: int = 0
-    row: int = 0
-    rowspan: int = 1
+    column: Optional[int] = None
+    columnspan: Optional[int] = None
+    ipadx: Optional[int] = None
+    ipady: Optional[int] = None
+    padx: Optional[int] = None
+    pady: Optional[int] = None
+    row: Optional[int] = None
+    rowspan: Optional[int] = None
     sticky: Literal[Direction, "nesw"] = "nesw"
 
 
@@ -29,11 +29,25 @@ class Packer:
     anchor: Literal[Direction, "center"] = "center"
     expand: bool = False
     fill: Literal["none", "x", "y", "both"] = "none"
-    ipadx: int = 0
-    ipady: int = 0
-    padx: int = 0
-    pady: int = 0
+    ipadx: Optional[int] = None
+    ipady: Optional[int] = None
+    padx: Optional[int] = None
+    pady: Optional[int] = None
     side: Literal["", "top", "bottom", "left", "right"] = ""
+
+
+@dataclass
+class Placer:
+    x: Optional[int] = None
+    y: Optional[int] = None
+    relx: Optional[int] = None
+    rely: Optional[int] = None
+    width: Optional[int] = None
+    height: Optional[int] = None
+    relwidth: Optional[int] = None
+    relheight: Optional[int] = None
+    bordermode: Optional[Literal["inside", "outside"]] = None
+    anchor: Optional[Literal[Direction, "center"]] = None
 
 
 class W:
@@ -43,7 +57,7 @@ class W:
         self.controller = None
         self.sub: Iterable["W"] = ()
 
-    def __mul__(self, other: Union[Gridder, Packer]):
+    def __mul__(self, other: Union[Gridder, Packer, Placer]):
         self.controller = other
         return self
 
