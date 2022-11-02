@@ -222,6 +222,7 @@ class Widget(_Base):
                 anchor=geo.anchor, expand=geo.expand, fill=geo.fill,
                 in_=geo.in_, ipadx=geo.ipadx, ipady=geo.ipady,
                 padx=geo.padx, pady=geo.pady, side=geo.side,
+                after=geo.after, before=geo.before
             )
         elif isinstance(geo, dec.Placer):
             self.place(
