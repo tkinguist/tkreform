@@ -1,10 +1,36 @@
+"""
+Reformed tkinter coding tool.
+
+TkReform provides a wrapping on standard Tkinter. Window wraps Toplevel
+widgets, and Widget wraps other widgets.
+
+Properties of the widgets can be specified with keyword arguments or
+attributes.
+
+Example (Hello, World):
+>>> import tkinter as tk
+>>> import tkreform
+>>> window = tkreform.Window(tk.Tk())
+>>> frame = window.add_widget(tk.Frame, relief="ridge", borderwidth=2)
+>>> frame.pack(fill="both", expand=True)
+>>> label = frame.add_widget(tk.Label)
+>>> label.text = "Hello, World"
+>>> label.pack(fill="x", expand=True)
+>>> button = frame.add_widget(tk.Button, text="Exit")
+>>> button.callback(window.destroy)
+>>> button.pack(side="bottom")
+>>> window.loop()
+"""
+
 import sys
 import tkinter as tk
 from tkinter import ttk
 
 from tkreform.exceptions import WidgetNotArranged
-from . import declarative as dec
+from . import declarative
 from typing import Any, Callable, Iterable, List, Tuple, Type, Union
+
+dec = declarative
 
 # use Literal type
 if sys.version_info >= (3, 8):
@@ -81,39 +107,9 @@ class _Base:
         for w in sub:
             _widget = self.add_widget(w.widget, **w.kwargs)
             _widget.load_sub(w.sub)
-            ctl = w.controller
-            if isinstance(ctl, dec.Gridder):
-                _widget.grid(
-                    column=ctl.column, columnspan=ctl.columnspan,
-                    ipadx=ctl.ipadx, ipady=ctl.ipady,
-                    padx=ctl.padx, pady=ctl.pady,
-                    row=ctl.row, rowspan=ctl.rowspan, sticky=ctl.sticky
-                )
-            elif isinstance(ctl, dec.Packer):
-                _widget.pack(
-                    anchor=ctl.anchor, expand=ctl.expand, fill=ctl.fill,
-                    ipadx=ctl.ipadx, ipady=ctl.ipady,
-                    padx=ctl.padx, pady=ctl.pady, side=ctl.side,
-                    **(
-                        dict()
-                            if self.__declarative_prev_widget is None else
-                        dict(after=self.__declarative_prev_widget.base)
-                    )
-                )
-            elif isinstance(ctl, dec.Placer):
-                _widget.place(
-                    x=ctl.x, y=ctl.y, relx=ctl.relx, rely=ctl.rely,
-                    anchor=ctl.anchor, width=ctl.width, height=ctl.height,
-                    relwidth=ctl.relwidth, relheight=ctl.relheight,
-                    bordermode=ctl.bordermode
-                )
-            else:
-                raise WidgetNotArranged(
-                    f"widget '{_widget.base}' has not been arranged by "
-                    "gridder or packer."
-                )
+            if w.controller is not None:
+                _widget.apply(w.controller)
             self._sub_widget.append(_widget)
-            self.__declarative_prev_widget = _widget
 
     def destroy(self):
         """Destroy window / widget."""
@@ -210,6 +206,39 @@ class Widget(_Base):
         """
         self.base["command"] = func
         return func
+
+    command = callback
+
+    def apply(self, geo: Union[dec.Gridder, dec.Packer, dec.Placer]):
+        if isinstance(geo, dec.Gridder):
+            self.grid(
+                column=geo.column, columnspan=geo.columnspan,
+                ipadx=geo.ipadx, ipady=geo.ipady,
+                padx=geo.padx, pady=geo.pady,
+                row=geo.row, rowspan=geo.rowspan, sticky=geo.sticky
+            )
+        elif isinstance(geo, dec.Packer):
+            self.pack(
+                anchor=geo.anchor, expand=geo.expand, fill=geo.fill,
+                ipadx=geo.ipadx, ipady=geo.ipady,
+                padx=geo.padx, pady=geo.pady, side=geo.side,
+            )
+        elif isinstance(geo, dec.Placer):
+            self.place(
+                x=geo.x, y=geo.y, relx=geo.relx, rely=geo.rely,
+                anchor=geo.anchor, width=geo.width, height=geo.height,
+                relwidth=geo.relwidth, relheight=geo.relheight,
+                bordermode=geo.bordermode
+            )
+        else:
+            raise WidgetNotArranged(
+                f"widget '{self.base}' has not been arranged by gridder or"
+                "packer."
+            )
+
+    def __mul__(self, other: Union[dec.Gridder, dec.Packer, dec.Placer]):
+        self.apply(other)
+        return self
 
     @property
     def text(self) -> str:
@@ -311,13 +340,19 @@ class Window(_Base):
         """Withdraw (hide) the window."""
         self.base.withdraw()
 
+    withdraw = wmhide
+
     def minimize(self):
         """Minimize the window."""
         self.base.iconify()
 
+    iconify = minimize
+
     def restore(self):
         """Restore the window from being withdrawn or minimized."""
         self.base.deiconify()
+
+    deiconify = restore
     
     def on_protocol(self, protocol: str):
         """

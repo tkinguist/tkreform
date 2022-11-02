@@ -1,3 +1,23 @@
+"""
+TkReform declarative extension.
+
+This extension provides a series of classes to support declarative style.
+
+Example (Hello, World):
+>>> import tkinter as tk
+>>> import tkreform
+>>> from tkreform.dec import W, Packer
+>>> window = tkreform.Window(tk.Tk())
+>>> window /= (
+>>>     W(tk.Frame, relief="ridge", borderwidth=2) * Packer(fill="both", expand=True) / (
+>>>         W(tk.Label, text="Hello, World") * Packer(fill="x", expand=True),
+>>>         W(tk.Button, text="Exit") * Packer(side="bottom")
+>>>     ),
+>>> )
+>>> window[0][1].callback(window.destroy)
+>>> window.loop()
+"""
+
 from dataclasses import dataclass
 import sys
 from tkinter import Widget
