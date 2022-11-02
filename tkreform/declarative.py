@@ -51,6 +51,7 @@ class Placer:
 
 
 class W:
+    """Widget data pre-storage."""
     def __init__(self, widget: Type[Widget], **kwargs: Any) -> None:
         self.widget = widget
         self.kwargs = kwargs
