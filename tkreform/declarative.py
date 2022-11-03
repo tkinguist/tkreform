@@ -20,8 +20,9 @@ Example (Hello, World):
 
 from dataclasses import dataclass
 import sys
-from tkinter import Tk, Toplevel, Widget, ttk
 from typing import Any, Iterable, Optional, Type, Union
+
+from tkreform.base import WidgetType, WindowType
 
 if sys.version_info >= (3, 8):
     from typing import Literal
@@ -35,7 +36,7 @@ Direction = Literal["n", "ne", "e", "se", "s", "sw", "w", "nw"]
 class Gridder:
     column: Optional[int] = None
     columnspan: Optional[int] = None
-    in_: Optional[Union[Tk, Toplevel, Widget, ttk.Widget]] = None
+    in_: Optional[Union[WidgetType, WindowType]] = None
     ipadx: Optional[int] = None
     ipady: Optional[int] = None
     padx: Optional[int] = None
@@ -47,12 +48,12 @@ class Gridder:
 
 @dataclass
 class Packer:
-    after: Optional[Union[Widget, ttk.Widget]] = None
+    after: Optional[WidgetType] = None
     anchor: Optional[Literal[Direction, "center"]] = None
-    before: Optional[Union[Widget, ttk.Widget]] = None
+    before: Optional[WidgetType] = None
     expand: bool = False
     fill: Literal["none", "x", "y", "both"] = "none"
-    in_: Optional[Union[Tk, Toplevel, Widget, ttk.Widget]] = None
+    in_: Optional[Union[WidgetType, WindowType]] = None
     ipadx: Optional[int] = None
     ipady: Optional[int] = None
     padx: Optional[int] = None
@@ -70,14 +71,14 @@ class Placer:
     height: Optional[int] = None
     relwidth: Optional[int] = None
     relheight: Optional[int] = None
-    in_: Optional[Union[Tk, Toplevel, Widget, ttk.Widget]] = None
+    in_: Optional[Union[WidgetType, WindowType]] = None
     bordermode: Optional[Literal["inside", "outside"]] = None
     anchor: Optional[Literal[Direction, "center"]] = None
 
 
 class W:
     """Widget data pre-storage."""
-    def __init__(self, widget: Type[Widget], **kwargs: Any) -> None:
+    def __init__(self, widget: Type[WidgetType], **kwargs: Any) -> None:
         self.widget = widget
         self.kwargs = kwargs
         self.controller = None
