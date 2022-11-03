@@ -43,7 +43,7 @@ class Gridder:
     pady: Optional[int] = None
     row: Optional[int] = None
     rowspan: Optional[int] = None
-    sticky: Optional[Literal[Direction, "nesw"]] = None
+    sticky: Optional[Direction] = None
 
 
 @dataclass
