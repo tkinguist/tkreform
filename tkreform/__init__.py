@@ -44,8 +44,7 @@ try:
     from PIL.ImageTk import PhotoImage
     HAS_PIL = True
 except ImportError:
-    Image = tk.Image
-    PhotoImage = tk.PhotoImage
+    from tkinter import Image, PhotoImage
     HAS_PIL = False
 
 WidgetType = Union[tk.Widget, ttk.Widget]
@@ -256,7 +255,7 @@ class Widget(_Base):
         return self.base["image"]
 
     @image.setter
-    def image(self, img: Union[str, Image, PhotoImage]):  # type: ignore
+    def image(self, img: Union[str, Image, PhotoImage]):
         _img = (
             PhotoImage(file=img)
                 if isinstance(img, str) else
@@ -440,14 +439,14 @@ class Window(_Base):
     def icon(self, ic: str):
         self.base.iconbitmap(ic, ic)
 
-    def xicon(self, *ic: PhotoImage, inherit: bool = True):  # type: ignore
+    def xicon(self, *ic: PhotoImage, inherit: bool = True):
         """
         Advanced icon setter.
 
         - *ic: `PhotoImage` - icon images
         - inherit: `bool` - whether the icon applies to sub windows
         """
-        self.base.iconphoto(inherit, *ic)
+        self.base.iconphoto(inherit, *ic)  # type: ignore
 
     @property
     def bgcolor(self) -> str:
