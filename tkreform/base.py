@@ -84,6 +84,13 @@ class _Base:
                 _widget.apply(w.controller)
             self._sub_widget.append(_widget)
 
+    def __truediv__(self, other: Iterable[dec.W]):
+        for old in self._sub_widget:
+            old.destroy()
+        self._sub_widget = []
+        self.load_sub(other)
+        return self
+
     def destroy(self):
         """Destroy window / widget."""
         self.base.destroy()
@@ -354,12 +361,6 @@ class Window(_Base):
             self.base.protocol(protocol, func)
             return func
         return __wrapper
-
-    def __truediv__(self, other: Iterable[dec.W]):
-        for old in self._sub_widget:
-            old.destroy()
-        super().load_sub(other)
-        return self
 
     @property
     def title(self):
