@@ -2,13 +2,15 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 import gettext, locale
 from typing import Iterable, Optional
 
+from tkreform.exceptions import MessageNotFound
+
 
 class Messages(dict[str, str]):
     def __matmul__(self, __o: str) -> str:
-        for k in super():
-            if super()[k] == __o:
+        for k in self:
+            if self[k] == __o:
                 return k
-        raise ValueError(f"Cannot find any key by value '{__o}'.")
+        raise MessageNotFound(f"Cannot find any key by value '{__o}'.")
 
 
 class Linguist(metaclass=ABCMeta):
@@ -50,6 +52,10 @@ class KVPairLinguist(Linguist):
     @dest.setter
     def dest(self, _new: str):
         self._dest = _new
+
+    @property
+    def current_messages(self):
+        return self._messages[self.dest]
 
 
 class GettextLinguist(Linguist):

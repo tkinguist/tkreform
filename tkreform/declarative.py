@@ -20,9 +20,11 @@ Example (Hello, World):
 
 from dataclasses import dataclass
 import sys
+import tkinter as tk, tkinter.ttk as ttk
 from typing import Any, Iterable, Optional, Type, Union
 
-from tkreform.base import WidgetType, WindowType
+WidgetType = Union[tk.Widget, ttk.Widget]
+WindowType = Union[tk.Tk, tk.Toplevel]
 
 if sys.version_info >= (3, 8):
     from typing import Literal

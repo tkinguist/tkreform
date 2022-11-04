@@ -1,10 +1,12 @@
+from abc import ABCMeta, abstractmethod
 import sys
 import tkinter as tk
 from tkinter import ttk
 
-from tkreform.exceptions import WidgetNotArranged
+from tkreform.exceptions import MessageNotFound, WidgetNotArranged
+from tkreform.linguist import Linguist
 from . import declarative as dec
-from typing import Any, Callable, Iterable, List, Tuple, Type, Union
+from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
 
 # use Literal type
 if sys.version_info >= (3, 8):
@@ -24,9 +26,10 @@ except ImportError:
 
 WidgetType = Union[tk.Widget, ttk.Widget]
 WindowType = Union[tk.Tk, tk.Toplevel]
+HasText = Union[tk.Label, tk.Button, ttk.Label, ttk.Button, tk.Message]
 
 
-class _Base:
+class _Base(metaclass=ABCMeta):
     def __init__(self, base: Union[WindowType, WidgetType]) -> None:
         """
         Base type of Window / Widget.
@@ -35,6 +38,7 @@ class _Base:
         """
         self.base = base
         self._sub_widget: List["Widget"] = []
+        self._linguist: Optional[Linguist] = None
 
     def __getitem__(self, it: Union[int, slice]):
         return self._sub_widget[it]
@@ -79,6 +83,7 @@ class _Base:
         """
         for w in sub:
             _widget = self.add_widget(w.widget, **w.kwargs)
+            _widget.linguist = self.linguist
             _widget.load_sub(w.sub)
             if w.controller is not None:
                 _widget.apply(w.controller)
@@ -95,8 +100,24 @@ class _Base:
         """Destroy window / widget."""
         self.base.destroy()
 
+    @abstractmethod
+    def update_translation(self):
+        raise NotImplementedError
+
+    @property
+    def linguist(self):
+        return self._linguist
+
+    @linguist.setter
+    def linguist(self, _l: Optional[Linguist]):
+        self._linguist = _l
+        self.update_translation()
+
 
 class Widget(_Base):
+    """
+    Reformed Widget type based on `tkinter`.
+    """
     base: WidgetType
 
     def __init__(self, widget: WidgetType) -> None:
@@ -105,6 +126,8 @@ class Widget(_Base):
         # at the moment the image adder finishes its work.
         self._image_slot = None
         super().__init__(widget)
+        if isinstance(widget, HasText):
+            self._raw_text = self.text
 
     def grid(self, **kwargs):
         """
@@ -213,13 +236,19 @@ class Widget(_Base):
             )
         else:
             raise WidgetNotArranged(
-                f"widget '{self.base}' has not been arranged by gridder or"
-                "packer."
+                f"widget '{self.base}' has not been arranged by gridder, "
+                "packer or placer."
             )
 
     def __mul__(self, other: Union[dec.Gridder, dec.Packer, dec.Placer]):
         self.apply(other)
         return self
+
+    def update_translation(self):
+        if not self._sub_widget and hasattr(self, "_raw_text"):
+            self.text = self._raw_text
+        for w in self._sub_widget:
+            w.linguist = self.linguist
 
     @property
     def text(self) -> str:
@@ -228,7 +257,11 @@ class Widget(_Base):
 
     @text.setter
     def text(self, txt: str):
-        self.base["text"] = txt
+        self._raw_text = txt
+        try:
+            self.base["text"] = self._linguist[txt] if self._linguist else txt
+        except MessageNotFound:
+            pass
 
     @property
     def image(self) -> PhotoImage:  # type: ignore
@@ -305,6 +338,7 @@ class Window(_Base):
         - base: `tk.Tk | tk.Toplevel` - base window type
         """
         super().__init__(base)
+        self._raw_title = self.title
 
     def loop(self):
         """
@@ -362,6 +396,11 @@ class Window(_Base):
             return func
         return __wrapper
 
+    def update_translation(self):
+        self.title = self._raw_title
+        for w in self._sub_widget:
+            w.linguist = self.linguist
+
     @property
     def title(self):
         """Window title."""
@@ -369,7 +408,13 @@ class Window(_Base):
 
     @title.setter
     def title(self, title: str):
-        self.base.title(title)
+        self._raw_title = title
+        try:
+            self.base.title(
+                self._linguist[title] if self._linguist else title
+            )
+        except MessageNotFound:
+            pass
 
     @property
     def geometry(self):
