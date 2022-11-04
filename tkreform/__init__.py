@@ -23,7 +23,7 @@ Example (Hello, World):
 """
 
 from tkreform import base, declarative, groups
-from tkreform.base import *
+from tkreform.base import dec, Widget, Window
 from tkreform.declarative import Gridder, Packer, Placer
 
 __all__ = [

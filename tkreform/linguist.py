@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
-import gettext, locale
+import gettext
+import locale
 from typing import Iterable, Optional
 
 from tkreform.exceptions import MessageNotFound

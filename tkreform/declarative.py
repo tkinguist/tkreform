@@ -9,7 +9,9 @@ Example (Hello, World):
 >>> from tkreform.dec import W, Packer
 >>> window = tkreform.Window(tk.Tk())
 >>> window /= (
->>>     W(tk.Frame, relief="ridge", borderwidth=2) * Packer(fill="both", expand=True) / (
+>>>     W(
+>>>         tk.Frame, relief="ridge", borderwidth=2
+>>>     ) * Packer(fill="both", expand=True) / (
 >>>         W(tk.Label, text="Hello, World") * Packer(fill="x", expand=True),
 >>>         W(tk.Button, text="Exit") * Packer(side="bottom")
 >>>     ),
@@ -20,7 +22,8 @@ Example (Hello, World):
 
 from dataclasses import dataclass
 import sys
-import tkinter as tk, tkinter.ttk as ttk
+import tkinter as tk
+from tkinter import ttk
 from typing import Any, Iterable, Optional, Type, Union
 
 WidgetType = Union[tk.Widget, ttk.Widget]

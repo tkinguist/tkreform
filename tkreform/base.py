@@ -132,7 +132,7 @@ class Widget(_Base):
     def grid(self, **kwargs):
         """
         Position a widget in the parent widget in a grid.
-        
+
         - column: `int` - use cell identified with given column (starting
             with 0)
         - columnspan: `int` - this widget will span several columns
@@ -272,9 +272,9 @@ class Widget(_Base):
     def image(self, img: Union[str, Image, PhotoImage]):
         _img = (
             PhotoImage(file=img)
-                if isinstance(img, str) else
+            if isinstance(img, str) else
             PhotoImage(img)  # type: ignore
-                if isinstance(img, Image) and HAS_PIL else
+            if isinstance(img, Image) and HAS_PIL else
             img
         )
         self._image_slot = _img
@@ -333,8 +333,8 @@ class Window(_Base):
 
     def __init__(self, base: WindowType) -> None:
         """
-        Initialize a new window.  
-        
+        Initialize a new window.
+
         - base: `tk.Tk | tk.Toplevel` - base window type
         """
         super().__init__(base)
@@ -349,7 +349,7 @@ class Window(_Base):
     def sub_window(self):
         """
         Create a sub window.
-        
+
         Returns: `tk.Toplevel`
         """
         sub = type(self)(tk.Toplevel(self.base))
@@ -376,7 +376,7 @@ class Window(_Base):
         self.base.deiconify()
 
     deiconify = restore
-    
+
     def on_protocol(self, protocol: str):
         """
         Register response function on protocol hook.
@@ -512,7 +512,9 @@ class Window(_Base):
 
     @property
     def mode(self):
-        """Window mode (state) in `Literal["normal", "iconic", "withdrawn"]`."""
+        """
+        Window mode (state) in `Literal["normal", "iconic", "withdrawn"]`.
+        """
         return self.base.state()
 
     @mode.setter

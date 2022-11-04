@@ -1,8 +1,8 @@
 import tkinter
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from tkreform.base import Widget, Window
-from tkreform.declarative import Direction, Gridder
+from tkreform.declarative import Gridder
 
 
 class Group:
@@ -32,6 +32,7 @@ class ActionGroup(Group):
 
     def on(self, seq: str, append: bool = False):
         self._setup_dict(seq)
+
         def __wrapper(func: Callable[[tkinter.Event], Any]):
             if append:
                 self._calls[seq].append(func)
