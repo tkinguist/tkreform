@@ -48,7 +48,7 @@ class GriddingGroup(Group):
         for idx, wi in enumerate(self._contents):
             wi.grid(
                 column=idx // columnspan, columnspan=columnspan,
-                row=idx % columnspan,**kwargs
+                row=idx % columnspan, **kwargs
             )
 
     def __mul__(self, other: Gridder):
