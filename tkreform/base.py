@@ -20,7 +20,8 @@ try:
     from PIL.ImageTk import PhotoImage
     HAS_PIL = True
 except ImportError:
-    from tkinter import Image, PhotoImage
+    from tkinter import PhotoImage
+    Image = object
     HAS_PIL = False
 
 
@@ -269,7 +270,7 @@ class Widget(_Base):
         return self.base["image"]
 
     @image.setter
-    def image(self, img: Union[str, Image, PhotoImage]):
+    def image(self, img: Union[str, Image, PhotoImage]):  # type: ignore
         _img = (
             PhotoImage(file=img)
             if isinstance(img, str) else
