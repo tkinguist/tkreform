@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkreform import Window
-from tkreform.declarative import W, Gridder, Packer
+from tkreform.declarative import M, W, Gridder, MenuBinder, Packer
+from tkreform.menu import MenuCascade, MenuCommand, MenuSeparator
 
 win = Window(tk.Tk())
 
@@ -10,6 +11,16 @@ win.resizable = False
 win.top = True
 
 win /= (
+    W(tk.Menu) * MenuBinder(win) / (
+        M(MenuCascade(label="File"), tearoff=False) * MenuBinder() / (
+            MenuCommand(label="New", accelerator="Ctrl+N"),
+            MenuCommand(label="Open", accelerator="Ctrl+O"),
+            MenuCommand(label="Save", accelerator="Ctrl+S"),
+            MenuSeparator(),
+            MenuCommand(label="Exit", command=win.destroy, accelerator="Alt+F4")
+        ),
+        M(MenuCascade(label="Edit"), tearoff=False) * MenuBinder()
+    ),
     W(tk.Label, bg="gray", width=25, height=40) * Gridder(),
     W(tk.Frame, width=350, height=400) * Gridder(column=1, row=0, sticky="nw") / (
         W(tk.Frame, width=350, height=350) * Gridder() / (
@@ -23,6 +34,6 @@ win /= (
     )
 )
 
-win[1][1][0].callback(win.destroy)  # type: ignore
+win[2][1][0].callback(win.destroy)
 
 win.loop()

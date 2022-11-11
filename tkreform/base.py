@@ -5,8 +5,12 @@ from tkinter import ttk
 
 from tkreform.exceptions import MessageNotFound, WidgetNotArranged
 from tkreform.linguist import Linguist
+from tkreform.menu import MenuItem
 from . import declarative as dec
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Type, Union
+from typing import (
+    Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union,
+    overload
+)
 
 # use Literal type
 if sys.version_info >= (3, 8):
@@ -24,14 +28,16 @@ except ImportError:
     Image = object
     HAS_PIL = False
 
-
 WidgetType = Union[tk.Widget, ttk.Widget]
 WindowType = Union[tk.Tk, tk.Toplevel]
 HasText = Union[tk.Label, tk.Button, ttk.Label, ttk.Button, tk.Message]
 
+_T = TypeVar("_T", WidgetType, WindowType)
+_WidgetT = TypeVar("_WidgetT", tk.Widget, ttk.Widget)
+
 
 class _Base(metaclass=ABCMeta):
-    def __init__(self, base: Union[WindowType, WidgetType]) -> None:
+    def __init__(self, base: _T) -> None:
         """
         Base type of Window / Widget.
 
@@ -40,6 +46,14 @@ class _Base(metaclass=ABCMeta):
         self.base = base
         self._sub_widget: List["Widget"] = []
         self._linguist: Optional[Linguist] = None
+
+    @overload
+    def __getitem__(self, it: int) -> "Widget":
+        ...
+
+    @overload
+    def __getitem__(self, it: slice) -> List["Widget"]:
+        ...
 
     def __getitem__(self, it: Union[int, slice]):
         return self._sub_widget[it]
@@ -76,19 +90,26 @@ class _Base(metaclass=ABCMeta):
         w = sw(self.base, *args, **kwargs)
         return Widget(w)
 
-    def load_sub(self, sub: Iterable[dec.W]):
+    def load_sub(self, sub: Iterable[Union[dec.W, MenuItem]]):
         """
         Load sub widgets recursively.
 
         - sub: `Iterable[dec.W]` - sub widget tree
         """
         for w in sub:
-            _widget = self.add_widget(w.widget, **w.kwargs)
-            _widget.linguist = self.linguist
-            _widget.load_sub(w.sub)
-            if w.controller is not None:
-                _widget.apply(w.controller)
-            self._sub_widget.append(_widget)
+            if isinstance(w, MenuItem):
+                self.base.add(w.type, **w.data)  # type: ignore
+            else:
+                _widget = self.add_widget(w.widget, **w.kwargs)
+                _widget.linguist = self.linguist
+                if isinstance(w, dec.M):
+                    self.base.add(  # type: ignore
+                        w.it.type, menu=_widget.base, **w.it.data
+                    )
+                _widget.load_sub(w.sub)
+                if w.controller is not None:
+                    _widget.apply(w.controller)
+                self._sub_widget.append(_widget)
 
     def __truediv__(self, other: Iterable[dec.W]):
         for old in self._sub_widget:
@@ -119,14 +140,13 @@ class Widget(_Base):
     """
     Reformed Widget type based on `tkinter`.
     """
-    base: WidgetType
-
-    def __init__(self, widget: WidgetType) -> None:
+    def __init__(self, widget: _WidgetT) -> None:
         # To keep the content image alive, here gives a slot to add a
         # reference to the image so that the image wouldn't be recycled by GC
         # at the moment the image adder finishes its work.
         self._image_slot = None
         super().__init__(widget)
+        self.base = widget
         if isinstance(widget, HasText):
             self._raw_text = self.text
 
@@ -213,7 +233,9 @@ class Widget(_Base):
 
     command = callback
 
-    def apply(self, geo: Union[dec.Gridder, dec.Packer, dec.Placer]):
+    def apply(
+        self, geo: Union[dec.Gridder, dec.Packer, dec.Placer, dec.MenuBinder]
+    ):
         if isinstance(geo, dec.Gridder):
             self.grid(
                 column=geo.column, columnspan=geo.columnspan,
@@ -235,6 +257,9 @@ class Widget(_Base):
                 relwidth=geo.relwidth, relheight=geo.relheight,
                 bordermode=geo.bordermode, in_=geo.in_
             )
+        elif isinstance(geo, dec.MenuBinder):
+            if geo.win is not None:
+                geo.win.menu = self.base
         else:
             raise WidgetNotArranged(
                 f"widget '{self.base}' has not been arranged by gridder, "
@@ -553,3 +578,11 @@ class Window(_Base):
     def screenwh(self):
         """Current screen size in tuple (w, h)"""
         return self.base.winfo_screenwidth(), self.base.winfo_screenheight()
+
+    @property
+    def menu(self):
+        return self.base["menu"]
+
+    @menu.setter
+    def menu(self, m):
+        self.base["menu"] = m

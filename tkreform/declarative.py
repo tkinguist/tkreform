@@ -23,8 +23,13 @@ Example (Hello, World):
 from dataclasses import dataclass
 import sys
 import tkinter as tk
-from tkinter import ttk
-from typing import Any, Iterable, Optional, Type, Union
+from tkinter import ttk, Menu
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Type, Union
+
+from tkreform.menu import MenuItem
+
+if TYPE_CHECKING:
+    from tkreform.base import Window
 
 WidgetType = Union[tk.Widget, ttk.Widget]
 WindowType = Union[tk.Tk, tk.Toplevel]
@@ -81,18 +86,29 @@ class Placer:
     anchor: Optional[Literal[Direction, "center"]] = None
 
 
+@dataclass
+class MenuBinder:
+    win: Optional["Window"] = None
+
+
 class W:
     """Widget data pre-storage."""
     def __init__(self, widget: Type[WidgetType], **kwargs: Any) -> None:
         self.widget = widget
         self.kwargs = kwargs
         self.controller = None
-        self.sub: Iterable["W"] = ()
+        self.sub: Iterable[Union["W", MenuItem]] = ()
 
-    def __mul__(self, other: Union[Gridder, Packer, Placer]):
+    def __mul__(self, other: Union[Gridder, Packer, Placer, MenuBinder]):
         self.controller = other
         return self
 
-    def __truediv__(self, other: Iterable["W"]):
+    def __truediv__(self, other: Iterable[Union["W", MenuItem]]):
         self.sub = other
         return self
+
+
+class M(W):
+    def __init__(self, it: MenuItem, **kwargs) -> None:
+        super().__init__(Menu, **kwargs)
+        self.it = it

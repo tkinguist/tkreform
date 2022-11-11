@@ -4,3 +4,7 @@ class WidgetNotArranged(Exception):
 
 class MessageNotFound(Exception):
     pass
+
+
+class MenuNotBinded(Exception):
+    pass
