@@ -91,7 +91,9 @@ class _Base(metaclass=ABCMeta):
         Returns: `Widget`
         """
         w = sw(self.base, *args, **kwargs)
-        return Widget(w)
+        cw = Widget(w)
+        self._sub_widget.append(cw)
+        return cw
 
     def load_sub(self, sub: Iterable[Union[dec.W, MenuItem]]):
         """
@@ -112,7 +114,6 @@ class _Base(metaclass=ABCMeta):
                 _widget.load_sub(w.sub)
                 if w.controller is not None:
                     _widget.apply(w.controller)
-                self._sub_widget.append(_widget)
 
     def __truediv__(self, other: Iterable[dec.W]):
         for old in self._sub_widget:
