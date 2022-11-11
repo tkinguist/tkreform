@@ -58,6 +58,9 @@ class _Base(metaclass=ABCMeta):
     def __getitem__(self, it: Union[int, slice]):
         return self._sub_widget[it]
 
+    def __setitem__(self, it: int, val: "Widget"):
+        self._sub_widget[it] = val
+
     def on(self, seq: str, append: bool = False):
         """
         Register response function on event sequence.
