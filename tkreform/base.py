@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 import sys
 import tkinter as tk
-from tkinter import ttk
+from tkinter import TclError, ttk
 
 from tkreform.exceptions import MessageNotFound, WidgetNotArranged
 from tkreform.linguist import Linguist
@@ -102,10 +102,10 @@ class _Base(metaclass=ABCMeta):
             else:
                 _widget = self.add_widget(w.widget, **w.kwargs)
                 _widget.linguist = self.linguist
-                if isinstance(w, dec.M):
-                    self.base.add(  # type: ignore
-                        w.it.type, menu=_widget.base, **w.it.data
-                    )
+                if isinstance(self.base, tk.Menu) and isinstance(w, dec.M):
+                    self.base.add(w.it.type, menu=_widget.base, **w.it.data)
+                elif isinstance(self.base, tk.PanedWindow):
+                    self.base.add(_widget.base)
                 _widget.load_sub(w.sub)
                 if w.controller is not None:
                     _widget.apply(w.controller)
@@ -265,6 +265,15 @@ class Widget(_Base):
                 f"widget '{self.base}' has not been arranged by gridder, "
                 "packer or placer."
             )
+
+    def sync(self):
+        if isinstance(self.base, tk.PanedWindow):
+            for x in self._sub_widget:
+                for k, v in self.base.paneconfigure(x.base).items():
+                    try:
+                        x.base.configure(**{k: v[-1]})
+                    except TclError:
+                        pass
 
     def __mul__(self, other: Union[dec.Gridder, dec.Packer, dec.Placer]):
         self.apply(other)
