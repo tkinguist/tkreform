@@ -87,5 +87,5 @@ X3 = Event(("", "Triple", NMODIFIER))
 X4 = Event(("", "Quadruple", NMODIFIER))
 
 LMB = Event(("Left Mouse Button", "Button", TYPE), ("", "1", DETAIL))
-RMB = Event(("Right Mouse Button", "Button", TYPE), ("", "2", DETAIL))
-CMB = Event(("Middle Mouse Button", "Button", TYPE), ("", "3", DETAIL))
+RMB = Event(("Right Mouse Button", "Button", TYPE), ("", "3", DETAIL))
+CMB = Event(("Middle Mouse Button", "Button", TYPE), ("", "2", DETAIL))
