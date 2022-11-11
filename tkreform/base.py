@@ -115,7 +115,7 @@ class _Base(metaclass=ABCMeta):
                 if w.controller is not None:
                     _widget.apply(w.controller)
 
-    def __truediv__(self, other: Iterable[dec.W]):
+    def __truediv__(self, other: Iterable[Union[dec.W, MenuItem]]):
         for old in self._sub_widget:
             old.destroy()
         self._sub_widget = []
