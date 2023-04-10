@@ -23,7 +23,7 @@ Example (Hello, World):
 from dataclasses import dataclass
 import sys
 import tkinter as tk
-from tkinter import _Compound, ttk, Menu
+from tkinter import ttk, Menu
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Type, Union
 
 from tkreform.menu import MenuItem
