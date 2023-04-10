@@ -9,8 +9,9 @@
 name: Upload Python Package
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - "v*"
 
 jobs:
   deploy:
@@ -18,9 +19,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.9'
     - name: Install dependencies
@@ -31,7 +32,7 @@ jobs:
         echo "REL_VER=v$(cat VERSION)" >> $GITHUB_ENV
         python3 setup.py sdist bdist_wheel
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
@@ -39,8 +40,6 @@ jobs:
       uses: marvinpinto/action-automatic-releases@latest
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: ${{ env.REL_VER }}
-        title: ${{ env.REL_VER }}
         prerelease: false
         files: |
           dist/*
