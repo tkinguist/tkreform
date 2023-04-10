@@ -40,6 +40,7 @@ else:
     from typing_extensions import Literal
 
 Direction = Literal["n", "ne", "e", "se", "s", "sw", "w", "nw"]
+Compound = Literal["top", "left", "center", "right", "bottom", "none"]
 
 
 @dataclass
@@ -98,7 +99,7 @@ class NotebookAdder:
     padding: ttk._Padding = (0, 0)
     text: str = ""
     image: Any = None
-    compound: _Compound = "none"
+    compound: Compound = "none"
     underline: int = 0
 
 
