@@ -24,7 +24,7 @@ from dataclasses import dataclass
 import sys
 import tkinter as tk
 from tkinter import ttk, Menu
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Tuple, Type, Union
 
 from tkreform.menu import MenuItem
 
@@ -41,7 +41,8 @@ else:
 
 Direction = Literal["n", "ne", "e", "se", "s", "sw", "w", "nw"]
 Compound = Literal["top", "left", "center", "right", "bottom", "none"]
-
+LiteralFloat = Union[str, float]
+Padding = Union[LiteralFloat, Tuple[LiteralFloat, ...]]
 
 @dataclass
 class Gridder:
@@ -96,7 +97,7 @@ class MenuBinder:
 class NotebookAdder:
     state: Literal["normal", "disabled", "hidden"] = "normal"
     sticky: Optional[Direction] = None
-    padding: ttk._Padding = (0, 0)
+    padding: Padding = (0, 0)
     text: str = ""
     image: Any = None
     compound: Compound = "none"
