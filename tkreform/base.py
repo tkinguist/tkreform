@@ -8,7 +8,7 @@ from tkreform.linguist import Linguist
 from tkreform.menu import MenuItem
 from . import declarative as dec
 from typing import (
-    Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union,
+    Any, Callable, Generic, Iterable, List, Optional, Tuple, Type, TypeVar, Union, cast,
     overload
 )
 
@@ -20,23 +20,22 @@ else:
 
 # attempt to use PIL
 try:
-    from PIL.Image import Image
     from PIL.ImageTk import PhotoImage
     HAS_PIL = True
 except ImportError:
     from tkinter import PhotoImage
-    Image = object
     HAS_PIL = False
 
 WidgetType = Union[tk.Widget, ttk.Widget]
 WindowType = Union[tk.Tk, tk.Toplevel]
 HasText = Union[tk.Label, tk.Button, ttk.Label, ttk.Button, tk.Message]
 
-_T = TypeVar("_T", WidgetType, WindowType)
-_WidgetT = TypeVar("_WidgetT", tk.Widget, ttk.Widget)
+_T = TypeVar("_T", bound=Union[WidgetType, WindowType])
+_WidgetT = TypeVar("_WidgetT", bound=WidgetType)
+_WindowT = TypeVar("_WindowT", bound=WindowType)
 
 
-class _Base(metaclass=ABCMeta):
+class _Base(Generic[_T], metaclass=ABCMeta):
     def __init__(self, base: _T) -> None:
         """
         Base type of Window / Widget.
@@ -61,6 +60,9 @@ class _Base(metaclass=ABCMeta):
     def __setitem__(self, it: int, val: "Widget"):
         self._sub_widget[it] = val
 
+    def __iter__(self):
+        return iter(self._sub_widget)
+
     def on(self, seq: str, append: bool = False):
         """
         Register response function on event sequence.
@@ -81,7 +83,7 @@ class _Base(metaclass=ABCMeta):
             return func
         return __wrapper
 
-    def add_widget(self, sw: Type[WidgetType], *args, **kwargs):
+    def add_widget(self, sw: Type[_WidgetT], *args, **kwargs) -> "Widget[_WidgetT]":
         """
         Add a widget to window / widget.
 
@@ -111,6 +113,12 @@ class _Base(metaclass=ABCMeta):
                     self.base.add(w.it.type, menu=_widget.base, **w.it.data)
                 elif isinstance(self.base, tk.PanedWindow):
                     self.base.add(_widget.base)
+                elif isinstance(self.base, ttk.Notebook):
+                    w.controller = cast(dec.NotebookAdder, w.controller)
+                    self.base.add(
+                        _widget.base,
+                        **{k: getattr(w.controller, k) for k in w.controller.__dataclass_fields__}
+                    )
                 _widget.load_sub(w.sub)
                 if w.controller is not None:
                     _widget.apply(w.controller)
@@ -140,10 +148,12 @@ class _Base(metaclass=ABCMeta):
         self.update_translation()
 
 
-class Widget(_Base):
+class Widget(_Base, Generic[_WidgetT]):
     """
     Reformed Widget type based on `tkinter`.
     """
+    base: _WidgetT
+
     def __init__(self, widget: _WidgetT) -> None:
         # To keep the content image alive, here gives a slot to add a
         # reference to the image so that the image wouldn't be recycled by GC
@@ -238,7 +248,7 @@ class Widget(_Base):
     command = callback
 
     def apply(
-        self, geo: Union[dec.Gridder, dec.Packer, dec.Placer, dec.MenuBinder]
+        self, geo: Union[dec.Gridder, dec.Packer, dec.Placer, dec.MenuBinder, dec.NotebookAdder]
     ):
         if isinstance(geo, dec.Gridder):
             self.grid(
@@ -264,6 +274,8 @@ class Widget(_Base):
         elif isinstance(geo, dec.MenuBinder):
             if geo.win is not None:
                 geo.win.menu = self.base
+        elif isinstance(geo, dec.NotebookAdder):
+            ...
         else:
             raise WidgetNotArranged(
                 f"widget '{self.base}' has not been arranged by gridder, "
@@ -308,14 +320,8 @@ class Widget(_Base):
         return self.base["image"]
 
     @image.setter
-    def image(self, img: Union[str, Image, PhotoImage]):  # type: ignore
-        _img = (
-            PhotoImage(file=img)
-            if isinstance(img, str) else
-            PhotoImage(img)  # type: ignore
-            if isinstance(img, Image) and HAS_PIL else
-            img
-        )
+    def image(self, img: Union[str, PhotoImage]):  # type: ignore
+        _img = (PhotoImage(file=img) if isinstance(img, str) else img)
         self._image_slot = _img
         self.base["image"] = _img
 
@@ -364,13 +370,13 @@ class Widget(_Base):
         self.base["state"] = "disabled" if st else "normal"
 
 
-class Window(_Base):
+class Window(_Base, Generic[_WindowT]):
     """
     Reformed Window type based on `tkinter`.
     """
-    base: WindowType
+    base: _WindowT
 
-    def __init__(self, base: WindowType) -> None:
+    def __init__(self, base: _WindowT) -> None:
         """
         Initialize a new window.
 
@@ -391,7 +397,7 @@ class Window(_Base):
 
         Returns: `tk.Toplevel`
         """
-        sub = type(self)(tk.Toplevel(self.base))
+        sub = Window(tk.Toplevel(self.base))
         return sub
 
     def update(self):
@@ -599,3 +605,13 @@ class Window(_Base):
     @menu.setter
     def menu(self, m):
         self.base["menu"] = m
+
+
+class Application(Generic[_WindowT], metaclass=ABCMeta):
+    def __init__(self, base: Union[_WindowT, Window[_WindowT]]) -> None:
+        self.win = base if isinstance(base, Window) else Window(base)
+        self.setup()
+
+    @abstractmethod
+    def setup(self) -> None:
+        raise NotImplementedError

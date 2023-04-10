@@ -23,7 +23,7 @@ Example (Hello, World):
 from dataclasses import dataclass
 import sys
 import tkinter as tk
-from tkinter import ttk, Menu
+from tkinter import _Compound, ttk, Menu
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Type, Union
 
 from tkreform.menu import MenuItem
@@ -91,6 +91,17 @@ class MenuBinder:
     win: Optional["Window"] = None
 
 
+@dataclass
+class NotebookAdder:
+    state: Literal["normal", "disabled", "hidden"] = "normal"
+    sticky: Optional[Direction] = None
+    padding: ttk._Padding = (0, 0)
+    text: str = ""
+    image: Any = None
+    compound: _Compound = "none"
+    underline: int = 0
+
+
 class W:
     """Widget data pre-storage."""
     def __init__(self, widget: Type[WidgetType], **kwargs: Any) -> None:
@@ -99,7 +110,7 @@ class W:
         self.controller = None
         self.sub: Iterable[Union["W", MenuItem]] = ()
 
-    def __mul__(self, other: Union[Gridder, Packer, Placer, MenuBinder]):
+    def __mul__(self, other: Union[Gridder, Packer, Placer, MenuBinder, NotebookAdder]):
         self.controller = other
         return self
 
