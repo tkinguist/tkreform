@@ -96,10 +96,10 @@ class MenuBinder:
 @dataclass
 class NotebookAdder:
     state: Literal["normal", "disabled", "hidden"] = "normal"
-    sticky: Optional[Direction] = None
+    sticky: Literal[Direction, "center", ""] = ""
     padding: Padding = (0, 0)
     text: str = ""
-    image: Any = None
+    image: Any = ""
     compound: Compound = "none"
     underline: int = 0
 
