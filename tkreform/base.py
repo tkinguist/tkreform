@@ -27,7 +27,6 @@ except ImportError:
 
 WidgetType = Union[tk.Widget, ttk.Widget]
 WindowType = Union[tk.Tk, tk.Toplevel]
-HasText = Union[tk.Label, tk.Button, ttk.Label, ttk.Button, tk.Message]
 
 _T = TypeVar("_T", bound=Union[WidgetType, WindowType])
 _WidgetT = TypeVar("_WidgetT", bound=WidgetType)
@@ -149,8 +148,6 @@ class Widget(_Base, Generic[_WidgetT]):
         self._image_slot = None
         super().__init__(widget)
         self.base = widget
-        if isinstance(widget, HasText):
-            self._raw_text = self.text
 
     def grid(self, **kwargs):
         """
@@ -284,8 +281,9 @@ class Widget(_Base, Generic[_WidgetT]):
         return self
 
     def update_translation(self):
-        if not self._sub_widget and hasattr(self, "_raw_text"):
-            self.text = self._raw_text
+        # if not self._sub_widget and hasattr(self, "_raw_text"):
+        #     self.text = self._raw_text
+        pass
 
     @property
     def text(self) -> str:
@@ -294,7 +292,6 @@ class Widget(_Base, Generic[_WidgetT]):
 
     @text.setter
     def text(self, txt: str):
-        self._raw_text = txt
         try:
             self.base["text"] = txt
         except MessageNotFound:
