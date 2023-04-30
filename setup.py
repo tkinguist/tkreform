@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='tkreform',
-    version=open("VERSION").read(),
+    version="0.3.6",
     description='Reformed tkinter coding tool.',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
