@@ -4,7 +4,6 @@ import tkinter as tk
 from tkinter import TclError, ttk
 
 from tkreform.exceptions import MessageNotFound, WidgetNotArranged
-from tkreform.linguist import Linguist
 from tkreform.menu import MenuItem
 from . import declarative as dec
 from typing import (
@@ -44,7 +43,6 @@ class _Base(Generic[_T], metaclass=ABCMeta):
         """
         self.base = base
         self._sub_widget: List["Widget"] = []
-        self._linguist: Optional[Linguist] = None
 
     @overload
     def __getitem__(self, it: int) -> "Widget":
@@ -108,7 +106,6 @@ class _Base(Generic[_T], metaclass=ABCMeta):
                 self.base.add(w.type, **w.data)  # type: ignore
             else:
                 _widget = self.add_widget(w.widget, **w.kwargs)
-                _widget.linguist = self.linguist
                 if isinstance(self.base, tk.Menu) and isinstance(w, dec.M):
                     self.base.add(w.it.type, menu=_widget.base, **w.it.data)
                 elif isinstance(self.base, tk.PanedWindow):
@@ -137,15 +134,6 @@ class _Base(Generic[_T], metaclass=ABCMeta):
     @abstractmethod
     def update_translation(self):
         raise NotImplementedError
-
-    @property
-    def linguist(self):
-        return self._linguist
-
-    @linguist.setter
-    def linguist(self, _l: Optional[Linguist]):
-        self._linguist = _l
-        self.update_translation()
 
 
 class Widget(_Base, Generic[_WidgetT]):
@@ -298,8 +286,6 @@ class Widget(_Base, Generic[_WidgetT]):
     def update_translation(self):
         if not self._sub_widget and hasattr(self, "_raw_text"):
             self.text = self._raw_text
-        for w in self._sub_widget:
-            w.linguist = self.linguist
 
     @property
     def text(self) -> str:
@@ -310,7 +296,7 @@ class Widget(_Base, Generic[_WidgetT]):
     def text(self, txt: str):
         self._raw_text = txt
         try:
-            self.base["text"] = self._linguist[txt] if self._linguist else txt
+            self.base["text"] = txt
         except MessageNotFound:
             pass
 
@@ -443,8 +429,8 @@ class Window(_Base, Generic[_WindowT]):
 
     def update_translation(self):
         self.title = self._raw_title
-        for w in self._sub_widget:
-            w.linguist = self.linguist
+        # for w in self._sub_widget:
+        #     w.linguist = self.linguist
 
     @property
     def title(self):
@@ -455,9 +441,7 @@ class Window(_Base, Generic[_WindowT]):
     def title(self, title: str):
         self._raw_title = title
         try:
-            self.base.title(
-                self._linguist[title] if self._linguist else title
-            )
+            self.base.title(title)
         except MessageNotFound:
             pass
 
